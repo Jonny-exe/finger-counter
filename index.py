@@ -78,10 +78,7 @@ class Video():
        break
 
     if pos is not None:
-      self.last_pos = {
-        "value": copy(pos),
-        "time": 0
-      }
+      self.last_pos["value"] = copy(pos)
     else:
       self.last_pos["time"] += 1
       return frame, self.last_pos.value
