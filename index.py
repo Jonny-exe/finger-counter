@@ -1,8 +1,8 @@
 import cv2 as cv
 import numpy as np
-import copy
+from copy import copy
 
-VIDEO_NAME = "video1.mp4"
+VIDEO_NAME = "video.mp4"
 
 class Video():
   def __init__(self):
@@ -16,6 +16,11 @@ class Video():
       cap = cv.VideoCapture(VIDEO_NAME)
       sucess, image = cap.read()
       canvas = self.create_canvas()
+
+      self.last_pos = {
+        "value" : None,
+        "time" : 0
+      }
 
       while sucess:
         image = cv.resize(image, [256, 256])
@@ -45,17 +50,58 @@ class Video():
     new_frame = frame.copy()
     finish = False
     pos = [0, 0]
-    for i in range(rows):
-      for j in range(cols):
+    if self.last_pos["value"] is not None:
+      hor_init = max(self.last_pos["value"][0] - 75, 0)
+      ver_init = max(self.last_pos["value"][1] - 75, 0)
+      hor_end = min(self.last_pos["value"][0] + 75, 256)
+      ver_end = min(self.last_pos["value"][1] + 75, 256)
+    else:
+      hor_init = 0 
+      hor_end = 256
+      ver_init = 0 
+      ver_end = 256
+    for i in range(ver_init, ver_end):
+      for j in range(hor_init, hor_end):
         p = frame[i,j]
-        if p[0] > 100 and frame[i,j-1][0] > 100:
+        dist = 0
+        if self.last_pos["value"] is not None and self.last_pos["time"] < 30:
+          dist = abs(i - self.last_pos["value"][0]) + abs(j - self.last_pos["value"][1]) 
+
+        around = self.check_around(frame, [i, j])
+        #if p[0] > 100 and frame[i,j-1][0] > 100 and dist < 200:
+        if around and dist < 150:
           new_frame = cv.circle(frame, [j, i], 4, (0, 255, 0), 1)
           pos = [j, i]
           finish = True
           break
       if finish:
        break
+
+    if pos is not None:
+      self.last_pos = {
+        "value": copy(pos),
+        "time": 0
+      }
+    else:
+      self.last_pos["time"] += 1
+      return frame, self.last_pos.value
+
     return frame, pos
+  
+  def check_around(self, frame, pos):
+    x, y = pos[0], pos[1]
+    finish = False
+    if y >= 256 - 10 or x >= 256 - 1:
+      return False
+    for i in range(5):
+      if frame[x,y+i][0] < 100 or frame[x+1, y+i][0] < 100:
+        finish = True
+      if finish:
+        break
+    return not finish
+          
+        
+    
 
   def get_trackbar_position(self):
     lh = cv.getTrackbarPos('Min_Hue', 'trackbars')
