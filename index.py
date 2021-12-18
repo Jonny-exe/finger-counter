@@ -1,5 +1,6 @@
 import cv2 as cv
 import numpy as np
+import copy
 
 VIDEO_NAME = "video.mp4"
 
@@ -16,17 +17,31 @@ class Video():
       sucess, image = cap.read()
 
       while sucess:
-        # image = cv.resize(image, [256, 256])
+        image = cv.resize(image, [256, 256])
         hsv_image = cv.cvtColor(image, cv.COLOR_BGR2HSV)
         lower_hsv, higher_hsv = self.get_trackbar_position()
         mask = cv.inRange(hsv_image, lower_hsv, higher_hsv)
         frame = cv.bitwise_and(hsv_image, hsv_image, mask=mask)
+        test = cv.cvtColor(frame, cv.COLOR_HSV2BGR)
+        test = self.find_finger(test)
         cv.imshow('image', frame)
+        cv.imshow('real', test)
 
         if cv.waitKey(1) & 0xFF == ord('q'):
           break
         sucess, image = cap.read()
     cv.destroyAllWindows()
+
+  def find_finger(self, frame):
+    rows, cols, _ = frame.shape
+    new_frame = frame.copy()
+    for i in range(rows):
+      for j in range(cols):
+        p = frame[i,j]
+        if p[0] > 100:
+          new_frame = cv.circle(frame, [j, i], 4, (0, 255, 0), 1)
+          pass
+    return frame
 
   def get_trackbar_position(self):
     lh = cv.getTrackbarPos('Min_Hue', 'trackbars')
