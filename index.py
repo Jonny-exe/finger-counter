@@ -2,7 +2,7 @@ import cv2 as cv
 import numpy as np
 import copy
 
-VIDEO_NAME = "video.mp4"
+VIDEO_NAME = "video1.mp4"
 
 class Video():
   def __init__(self):
@@ -15,6 +15,7 @@ class Video():
     while 1:
       cap = cv.VideoCapture(VIDEO_NAME)
       sucess, image = cap.read()
+      canvas = self.create_canvas()
 
       while sucess:
         image = cv.resize(image, [256, 256])
@@ -23,25 +24,38 @@ class Video():
         mask = cv.inRange(hsv_image, lower_hsv, higher_hsv)
         frame = cv.bitwise_and(hsv_image, hsv_image, mask=mask)
         test = cv.cvtColor(frame, cv.COLOR_HSV2BGR)
-        test = self.find_finger(test)
+        test, pos = self.find_finger(test)
+        #canvas[pos[1]][pos[0]] = [0, 0, 0]
+        canvas = self.draw_point(canvas, pos)
         cv.imshow('image', frame)
         cv.imshow('real', test)
+        cv.imshow('canvas', canvas)
 
         if cv.waitKey(1) & 0xFF == ord('q'):
           break
         sucess, image = cap.read()
     cv.destroyAllWindows()
 
+  def draw_point(self, frame, pos):
+    frame = cv.circle(frame, pos, 3, (0, 0, 0), 4)
+    return frame
+
   def find_finger(self, frame):
     rows, cols, _ = frame.shape
     new_frame = frame.copy()
+    finish = False
+    pos = [0, 0]
     for i in range(rows):
       for j in range(cols):
         p = frame[i,j]
-        if p[0] > 100:
+        if p[0] > 100 and frame[i,j-1][0] > 100:
           new_frame = cv.circle(frame, [j, i], 4, (0, 255, 0), 1)
-          pass
-    return frame
+          pos = [j, i]
+          finish = True
+          break
+      if finish:
+       break
+    return frame, pos
 
   def get_trackbar_position(self):
     lh = cv.getTrackbarPos('Min_Hue', 'trackbars')
@@ -64,6 +78,10 @@ class Video():
     cv.createTrackbar('Max_Hue', 'trackbars', uh, 255, Video.nothing)
     cv.createTrackbar('Max_Saturation', 'trackbars', us, 255, Video.nothing)
     cv.createTrackbar('Max_Value', 'trackbars', uv, 255, Video.nothing)
+  
+  def create_canvas(self):
+    blank_image = 255 * np.ones(shape=[256, 256, 3], dtype=np.uint8)
+    return blank_image
   
   def nothing(hello):
     pass
