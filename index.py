@@ -4,14 +4,15 @@ from copy import copy
 import math
 
 VIDEO_NAME = "video1.webm"
-RED_VALUE = 100
 
 class Video():
   def __init__(self):
     cv.namedWindow('image')
     cv.namedWindow('trackbars')
     self.create_trackbars()
-    self.RED_VALUE = RED_VALUE
+    self.RED_VALUE = 100
+    self.BLUE_VALUE = 100
+    self.GREEN_VALUE = 100
     self.correct = False
 
     cap = cv.VideoCapture(VIDEO_NAME)
@@ -106,7 +107,10 @@ class Video():
     if y >= 256 - 10 or x >= 256 - 1:
       return False
     for i in range(5):
-      if frame[x,y+i][2] < self.RED_VALUE or frame[x+1, y+i][2] < self.RED_VALUE or frame[x-1, y+i][2] < self.RED_VALUE:
+      r = frame[x,y+i][2] < self.RED_VALUE or frame[x+1, y+i][2] < self.RED_VALUE or frame[x-1, y+i][2] < self.RED_VALUE
+      g = frame[x,y+i][2] < self.GREEN_VALUE or frame[x+1, y+i][2] < self.GREEN_VALUE or frame[x-1, y+i][2] < self.GREEN_VALUE
+      b = frame[x,y+i][2] < self.BLUE_VALUE or frame[x+1, y+i][2] < self.BLUE_VALUE or frame[x-1, y+i][2] < self.BLUE_VALUE
+      if r and g and b:
         finish = True
       if finish:
         break
@@ -120,6 +124,8 @@ class Video():
     us = cv.getTrackbarPos('Max_Saturation', 'trackbars')
     uv = cv.getTrackbarPos('Max_Value', 'trackbars')
     self.RED_VALUE = cv.getTrackbarPos('Red', 'trackbars')
+    self.BLUE_VALUE = cv.getTrackbarPos('Blue', 'trackbars')
+    self.GREEN_VALUE = cv.getTrackbarPos('Green', 'trackbars')
     self.correct = cv.getTrackbarPos('Correct', 'trackbars')
     lower_hsv = np.array([lh, ls, lv])
     higher_hsv = np.array([uh, us, uv])
@@ -136,6 +142,9 @@ class Video():
     cv.createTrackbar('Max_Saturation', 'trackbars', us, 255, Video.nothing)
     cv.createTrackbar('Max_Value', 'trackbars', uv, 255, Video.nothing)
     cv.createTrackbar('Red', 'trackbars', 100, 255, Video.nothing)
+    cv.createTrackbar('Red', 'trackbars',100, 255, Video.nothing)
+    cv.createTrackbar('Blue', 'trackbars', 100, 255, Video.nothing)
+    cv.createTrackbar('Green', 'trackbars', 100, 255, Video.nothing)
     cv.createTrackbar('Correct', 'trackbars', 0, 1, Video.nothing)
   
   def create_canvas(self):
