@@ -29,6 +29,7 @@ class Video():
       pos = [0, 0]
       while sucess:
         image = cv.resize(image, [256, 256])
+        image = cv.flip(image, 1)
         hsv_image = cv.cvtColor(image, cv.COLOR_BGR2HSV)
         lower_hsv, higher_hsv = self.get_trackbar_position()
         mask = cv.inRange(hsv_image, lower_hsv, higher_hsv)
