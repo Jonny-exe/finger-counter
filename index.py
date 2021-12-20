@@ -3,7 +3,9 @@ import numpy as np
 from copy import copy
 import math
 
-VIDEO_NAME = "video1.webm"
+# VIDEO_NAME = "video1.webm"
+VIDEO_NAME = 0
+WIDTH = 500
 
 class Video():
   def __init__(self):
@@ -14,6 +16,8 @@ class Video():
     self.BLUE_VALUE = 100
     self.GREEN_VALUE = 100
     self.correct = False
+    self.reset = False
+
 
     cap = cv.VideoCapture(VIDEO_NAME)
 
@@ -29,7 +33,12 @@ class Video():
 
       pos = [0, 0]
       while sucess:
-        image = cv.resize(image, [256, 256])
+        self.reset = cv.getTrackbarPos('Reset', 'trackbars')
+        if self.reset:
+          canvas = self.create_canvas()
+          self.reset = False
+
+        image = cv.resize(image, [WIDTH, WIDTH])
         image = cv.flip(image, 1)
         hsv_image = cv.cvtColor(image, cv.COLOR_BGR2HSV)
         lower_hsv, higher_hsv = self.get_trackbar_position()
@@ -41,18 +50,16 @@ class Video():
 
         if self.correct and pos is not None and last is not None:
           if abs(last[0] - pos[0]) < 15 and abs(last[1] - pos[1]) > 15:
-            print("Correcting")
             pos[0] = last[0]
           elif abs(last[1] - pos[1]) < 15 and abs(last[0] - pos[0]) > 15:
-            print("Correcting")
             pos[1] = last[1]
-        #canvas[pos[1]][pos[0]] = [0, 0, 0]
+
         canvas = self.draw_point(canvas, pos)
-        cv.imshow('image', frame)
+        # cv.imshow('image', frame)
         cv.imshow('real', test)
         cv.imshow('canvas', canvas)
 
-        if cv.waitKey(3) & 0xFF == ord('q'):
+        if cv.waitKey(1) & 0xFF == ord('q'):
           break
         sucess, image = cap.read()
     cv.destroyAllWindows()
@@ -67,15 +74,16 @@ class Video():
     finish = False
     pos = None
     if self.last_pos["value"] is not None:
-      hor_init = max(self.last_pos["value"][0] - 35, 0)
-      ver_init = max(self.last_pos["value"][1] - 35, 0)
-      hor_end = min(self.last_pos["value"][0] + 35, 256)
-      ver_end = min(self.last_pos["value"][1] + 35, 256)
+      dist_range = int(WIDTH * 0.3 / 2)
+      hor_init = max(self.last_pos["value"][0] - dist_range, 0)
+      ver_init = max(self.last_pos["value"][1] - dist_range, 0)
+      hor_end = min(self.last_pos["value"][0] + dist_range, WIDTH)
+      ver_end = min(self.last_pos["value"][1] + dist_range, WIDTH)
     else:
       hor_init = 0 
-      hor_end = 256
+      hor_end = WIDTH
       ver_init = 0 
-      ver_end = 256
+      ver_end = WIDTH
     for i in range(ver_init, ver_end):
       for j in range(hor_init, hor_end):
         p = frame[i,j]
@@ -84,8 +92,7 @@ class Video():
           dist = math.sqrt(abs(i - self.last_pos["value"][0]) ** 2 + abs(j - self.last_pos["value"][1] ** 2))
 
         around = self.check_around(frame, [i, j])
-        #if p[0] > 100 and frame[i,j-1][0] > 100 and dist < 200:
-        if around and dist < 70:
+        if around and dist < WIDTH * 0.3:
           new_frame = cv.circle(frame, [j, i], 4, (0, 255, 0), 1)
           pos = [j, i]
           finish = True
@@ -104,7 +111,7 @@ class Video():
   def check_around(self, frame, pos):
     x, y = pos[0], pos[1]
     finish = False
-    if y >= 256 - 10 or x >= 256 - 1:
+    if y >= WIDTH - 10 or x >= WIDTH - 1:
       return False
     for i in range(5):
       r = frame[x,y+i][2] < self.RED_VALUE or frame[x+1, y+i][2] < self.RED_VALUE or frame[x-1, y+i][2] < self.RED_VALUE
@@ -146,10 +153,17 @@ class Video():
     cv.createTrackbar('Blue', 'trackbars', 100, 255, Video.nothing)
     cv.createTrackbar('Green', 'trackbars', 100, 255, Video.nothing)
     cv.createTrackbar('Correct', 'trackbars', 0, 1, Video.nothing)
+    cv.createTrackbar('Reset', 'trackbars', 0, 1, Video.nothing)
+
   
   def create_canvas(self):
-    blank_image = 255 * np.ones(shape=[256, 256, 3], dtype=np.uint8)
+    blank_image = 255 * np.ones(shape=[WIDTH, WIDTH, 3], dtype=np.uint8)
     return blank_image
+  
+  def wipe_canvas(self):
+    for i in range(len(self.canvas)):
+      for a in range(len(self.canvas[0])):
+        self.canvas[i][a] = [0, 0, 0];
   
   def nothing(hello):
     pass
