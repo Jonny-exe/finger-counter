@@ -3,9 +3,15 @@ import numpy as np
 from copy import copy
 import math
 
+from kivy.app import App
+from kivy.uix.widget import Widget
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.image import Image
+from kivy.clock import Clock
+from kivy.graphics.texture import Texture
+
 # VIDEO_NAME = "video1.webm"
 VIDEO_NAME = 0
-WIDTH = 500
 
 class Video():
   def __init__(self):
@@ -19,50 +25,53 @@ class Video():
     self.reset = False
 
 
-    cap = cv.VideoCapture(VIDEO_NAME)
+    self.cap = cv.VideoCapture(VIDEO_NAME)
+    self.canvas = self.create_canvas()
 
-    while 1:
-      cap = cv.VideoCapture(VIDEO_NAME)
-      sucess, image = cap.read()
-      canvas = self.create_canvas()
+    self.last_pos = {
+      "value" : None,
+      "time" : 0
+    }
 
-      self.last_pos = {
-        "value" : None,
-        "time" : 0
-      }
+#     while 1:
+#       self.next()
+#       cv.waitKey(1)
+#     cv.destroyAllWindows()
 
-      pos = [0, 0]
-      while sucess:
-        self.reset = cv.getTrackbarPos('Reset', 'trackbars')
-        if self.reset:
-          canvas = self.create_canvas()
-          self.reset = False
+  def next(self):
+    pos = [0, 0]
+    sucess, image = self.cap.read()
+    if not sucess:
+      print("not success")
+      return
 
-        image = cv.resize(image, [WIDTH, WIDTH])
-        image = cv.flip(image, 1)
-        hsv_image = cv.cvtColor(image, cv.COLOR_BGR2HSV)
-        lower_hsv, higher_hsv = self.get_trackbar_position()
-        mask = cv.inRange(hsv_image, lower_hsv, higher_hsv)
-        frame = cv.bitwise_and(hsv_image, hsv_image, mask=mask)
-        test = cv.cvtColor(frame, cv.COLOR_HSV2BGR)
-        last = copy(pos)
-        test, pos = self.find_finger(test)
+    self.reset = cv.getTrackbarPos('Reset', 'trackbars')
+    if self.reset:
+      self.canvas = self.create_canvas()
+      self.reset = False
 
-        if self.correct and pos is not None and last is not None:
-          if abs(last[0] - pos[0]) < 15 and abs(last[1] - pos[1]) > 15:
-            pos[0] = last[0]
-          elif abs(last[1] - pos[1]) < 15 and abs(last[0] - pos[0]) > 15:
-            pos[1] = last[1]
+    image = cv.resize(image, (WIDTH, WIDTH))
+    image = cv.flip(image, 1)
+    hsv_image = cv.cvtColor(image, cv.COLOR_BGR2HSV)
+    lower_hsv, higher_hsv = self.get_trackbar_position()
+    mask = cv.inRange(hsv_image, lower_hsv, higher_hsv)
+    frame = cv.bitwise_and(hsv_image, hsv_image, mask=mask)
+    test = cv.cvtColor(frame, cv.COLOR_HSV2BGR)
+    last = copy(pos)
+    test, pos = self.find_finger(test)
 
-        canvas = self.draw_point(canvas, pos)
-        # cv.imshow('image', frame)
-        cv.imshow('real', test)
-        cv.imshow('canvas', canvas)
+    if self.correct and pos is not None and last is not None:
+      if abs(last[0] - pos[0]) < 15 and abs(last[1] - pos[1]) > 15:
+        pos[0] = last[0]
+      elif abs(last[1] - pos[1]) < 15 and abs(last[0] - pos[0]) > 15:
+        pos[1] = last[1]
 
-        if cv.waitKey(1) & 0xFF == ord('q'):
-          break
-        sucess, image = cap.read()
-    cv.destroyAllWindows()
+    self.canvas = self.draw_point(self.canvas, pos)
+    # cv.imshow('image', frame)
+    #cv.imshow('real', test)
+    # cv.imshow('canvas', self.canvas)
+    return frame, self.canvas
+
 
   def draw_point(self, frame, pos):
     frame = cv.circle(frame, pos, 3, (0, 0, 0), 4)
@@ -169,7 +178,25 @@ class Video():
     pass
 
 
+class VideoApp(App):
+  def build(self):
+    print("Build")
+    self.frame = Image()
+    layout = BoxLayout() 
+    layout.add_widget(self.frame)
+    Clock.schedule_interval(self.update, 1 / 60)
+    self.video = Video()
 
-Video()
+    return layout
+
+  def update(self, dt):
+    frame, canvas = self.video.next()
+    buf = frame.tostring()
+    texture = Texture.create(size=(WIDTH, WIDTH), colorfmt="bgr")
+    texture.blit_buffer(buf, colorfmt="bgr", bufferfmt="ubyte")
+    self.frame.texture = texture
 
 
+if __name__ == "__main__":
+  WIDTH = 500
+  videoapp = VideoApp().run()
