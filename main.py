@@ -4,8 +4,11 @@ from copy import copy
 import math
 
 from kivy.app import App
+from kivy.uix.slider import Slider
+from kivy.uix.button import Button
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout 
 from kivy.uix.image import Image
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
@@ -15,9 +18,9 @@ VIDEO_NAME = 0
 
 class Video():
   def __init__(self):
-    cv.namedWindow('image')
-    cv.namedWindow('trackbars')
-    self.create_trackbars()
+    #cv.namedWindow('image')
+    #cv.namedWindow('trackbars')
+    # self.create_trackbars()
     self.RED_VALUE = 100
     self.BLUE_VALUE = 100
     self.GREEN_VALUE = 100
@@ -38,14 +41,16 @@ class Video():
 #       cv.waitKey(1)
 #     cv.destroyAllWindows()
 
-  def next(self):
+  def next(self, trackers):
     pos = [0, 0]
     sucess, image = self.cap.read()
     if not sucess:
       print("not success")
       return
 
-    self.reset = cv.getTrackbarPos('Reset', 'trackbars')
+    #TODO: do reset with button
+    #self.reset = cv.getTrackbarPos('Reset', 'trackbars')
+    
     if self.reset:
       self.canvas = self.create_canvas()
       self.reset = False
@@ -53,7 +58,12 @@ class Video():
     image = cv.resize(image, (WIDTH, WIDTH))
     image = cv.flip(image, 1)
     hsv_image = cv.cvtColor(image, cv.COLOR_BGR2HSV)
-    lower_hsv, higher_hsv = self.get_trackbar_position()
+    #lower_hsv, higher_hsv = self.get_trackbar_position()
+    hsv = []
+    for child in trackers.children:
+      if type(child) == Slider:
+        hsv.append(child.value)
+    lower_hsv, higher_hsv = (hsv[0],hsv[1],hsv[2]), (hsv[3],hsv[4],hsv[5])
     mask = cv.inRange(hsv_image, lower_hsv, higher_hsv)
     frame = cv.bitwise_and(hsv_image, hsv_image, mask=mask)
     test = cv.cvtColor(frame, cv.COLOR_HSV2BGR)
@@ -182,15 +192,48 @@ class VideoApp(App):
   def build(self):
     print("Build")
     self.frame = Image()
+
+    self.hl = Slider(min=0, max=255, value=100)
+    self.sl = Slider(min=0, max=255, value=100)
+    self.vl = Slider(min=0, max=255, value=100)
+
+    self.hh = Slider(min=0, max=255, value=100)
+    self.sh = Slider(min=0, max=255, value=100)
+    self.vh = Slider(min=0, max=255, value=100)
+
     layout = BoxLayout() 
+    self.box = BoxLayout(orientation='vertical')
     layout.add_widget(self.frame)
+
+    self.box.add_widget(self.hl)
+    self.box.add_widget(self.sl)
+    self.box.add_widget(self.vl)
+
+    self.box.add_widget(self.hh)
+    self.box.add_widget(self.sh)
+    self.box.add_widget(self.vh)
+
+    self.start_button = Button(text="Start")
+    self.start = False
+
+    self.start_button.bind(on_press=self.callback)
+    self.box.add_widget(self.start_button)
+
+    layout.add_widget(self.box)
+
     Clock.schedule_interval(self.update, 1 / 60)
     self.video = Video()
 
     return layout
 
+  def callback(self, dt):
+    print("Start: ", self.start)
+    self.start = True
+
   def update(self, dt):
-    frame, canvas = self.video.next()
+    if not self.start:
+      return
+    frame, canvas = self.video.next(self.box)
     buf = frame.tostring()
     texture = Texture.create(size=(WIDTH, WIDTH), colorfmt="bgr")
     texture.blit_buffer(buf, colorfmt="bgr", bufferfmt="ubyte")
