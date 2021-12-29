@@ -16,6 +16,9 @@ from kivy.graphics.texture import Texture
 # VIDEO_NAME = "video1.webm"
 VIDEO_NAME = 0
 
+class MyLayout(BoxLayout):
+  pass
+
 class Video():
   def __init__(self):
     #cv.namedWindow('image')
@@ -41,15 +44,17 @@ class Video():
 #       cv.waitKey(1)
 #     cv.destroyAllWindows()
 
-  def next(self, trackers):
+  def next(self, trackers, image):
     pos = [0, 0]
-    sucess, image = self.cap.read()
-    if not sucess:
-      print("not success")
-      return
+
+    # sucess, image = self.cap.read()
+    # if not sucess:
+    #   print("not success")
+    #   return None, None
 
     #TODO: do reset with button
     #self.reset = cv.getTrackbarPos('Reset', 'trackbars')
+
     
     if self.reset:
       self.canvas = self.create_canvas()
@@ -201,8 +206,8 @@ class VideoApp(App):
     self.sh = Slider(min=0, max=255, value=100)
     self.vh = Slider(min=0, max=255, value=100)
 
-    layout = BoxLayout() 
-    self.box = BoxLayout(orientation='vertical')
+    layout = MyLayout() 
+    self.box = MyLayout(orientation='vertical')
     layout.add_widget(self.frame)
 
     self.box.add_widget(self.hl)
@@ -233,11 +238,14 @@ class VideoApp(App):
   def update(self, dt):
     if not self.start:
       return
-    frame, canvas = self.video.next(self.box)
-    buf = frame.tostring()
-    texture = Texture.create(size=(WIDTH, WIDTH), colorfmt="bgr")
-    texture.blit_buffer(buf, colorfmt="bgr", bufferfmt="ubyte")
-    self.frame.texture = texture
+
+    image = self.root.ids.camera.image
+    frame, canvas = self.video.next(self.box, image)
+    if frame is not None:
+      buf = frame.tostring()
+      texture = Texture.create(size=(WIDTH, WIDTH), colorfmt="bgr")
+      texture.blit_buffer(buf, colorfmt="bgr", bufferfmt="ubyte")
+      self.frame.texture = texture
 
 
 if __name__ == "__main__":
