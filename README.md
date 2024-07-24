@@ -1,3 +1,7 @@
-# Virtual canvas
+# Finger counter
+This is a very simple CNN, which counts the number of fingers you are holding up. It's just made for fun and learning. 
 
-This is an application where you can draw by moving your finger, which is tracked with a webcam.
+Works pretty good as long as the fingers are close to the camera and clear.
+
+Written in pytorch and fed with own data.
+
