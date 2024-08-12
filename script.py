@@ -5,9 +5,6 @@ from copy import copy
 import skimage
 
 
-
-
-
 def process(image):
     lower = np.array([0, 58, 53], dtype = "uint8")
     upper = np.array([30, 255, 255], dtype = "uint8")
@@ -36,7 +33,7 @@ def process(image):
 
     nb_blobs, im_with_separated_blobs, stats, _ = cv.connectedComponentsWithStats(skin)
     sizes = stats[:, -1]
-    sizes = sizes[1:]
+    # sizes = sizes[1:]
     nb_blobs -= 1
     min_size = 250
 
@@ -65,7 +62,7 @@ if __name__ == "__main__":
         x = 0
         h = 300
         w = 300
-        process(frame[y:y+h, x:x+w])
+        process(np.fliplr(frame[y:y+h, x:x+w]))
 
 
         k = cv.waitKey(1)
@@ -75,9 +72,10 @@ if __name__ == "__main__":
             break
         elif k%256 == 32:
             # SPACE pressed
-            GROUP = 4
+            GROUP = 5
             img_name = "images/{}/opencv_frame_{}.png".format(GROUP, img_counter)
-            cv.imwrite(img_name, process(frame[y:y+h, x:x+w]))
+            # cv.imwrite(img_name, process(frame[y:y+h, x:x+w]))
+            cv.imwrite(img_name, frame[y:y+h, x:x+w])
             print("{} written!".format(img_name))
             img_counter += 1
 

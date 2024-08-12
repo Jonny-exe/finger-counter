@@ -1,4 +1,8 @@
-numpy
-opencv-python
-diplib
-scikit-image
+numpy==1.26.4
+torch==2.3.1
+torchaudio==2.3.1
+torchvision==0.18.1
+opencv-python==4.10.0.84
+diplib==3.5.1
+scikit-image==0.24.0
+
