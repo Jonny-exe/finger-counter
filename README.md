@@ -4,7 +4,6 @@ This is a very simple CNN, which counts the number of fingers you are holding up
 
 See [demo](#demo) video
 
-----
 
 
 ## Data
@@ -46,13 +45,15 @@ I also experienced that the model has more difficulty with some "finger amounts"
 
 All in all I think the model is good enough at counting fingers if the hand is close enough to the camera (remember images are downscaled to 50x50). 
 
-# Instalation
+## Instalation
 
 Install all python3 packages through pip. Depending on your cuda version you may have to install a differnet pytorch version. Go to the official website and download it. After that everything should work. If you have troubles with the camera, or have multiple webcams plugged in change the `cv.VideoCapture(0)` to your prefered webcam.
 
 # Demo
 
 A little video to show how it works.
+
+
 ![Demo gif](./demo.gif)
 
 You can always run it locally. You can use the pretrained model or train your own with your own data. All the tools you need are there! Have fun!
